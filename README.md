@@ -31,4 +31,4 @@
 ## 注意
 
 - Seed は全生成で固定されるため公平な比較が可能
-- 画像は WebUI の保存設定に関わらず `outputs/lora-compare/` に個別保存
+- 画像は txt2img / img2img の出力先設定に従い、その下に `lora-compare/` フォルダを作成して保存（例：出力先が `Image` なら `Image/lora-compare/`）
