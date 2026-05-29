@@ -1,33 +1,34 @@
 # sd-webui-lora-strength-compare
 
-A script extension for [Stable Diffusion WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) / Forge that generates all strength combinations for selected LoRAs.
+[Stable Diffusion WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) / Forge 向けスクリプト拡張。  
+選択した LoRA の強度を全パターン組み合わせて一括生成し、比較を容易にします。
 
-## Features
+## 機能
 
-- Select up to 8 LoRAs individually via dropdown
-- Set strength sweep range (Min / Max / Step)
-- Set how many LoRAs to combine at once
-- Generates every strength pattern independently per LoRA (`itertools.product`)
-- Overlays LoRA name + strength on each output image
-- Saves results to `outputs/lora-compare/`
-- Remembers selected LoRAs across sessions
+- LoRA を最大 8 本まで個別に選択
+- 強度スイープの範囲を Min / Max / Step で指定
+- 同時使用本数を指定してすべての組み合わせを生成
+- LoRA ごとに独立した強度の全パターンを生成（例：2本×3強度 = 9パターン）
+- 各画像の左下に LoRA 名と強度をオーバーレイ表示
+- 生成画像を `outputs/lora-compare/` に自動保存
+- 選択した LoRA をセッション間で記憶
 
-## Usage
+## 使い方
 
-1. Open **txt2img** or **img2img**
-2. Scroll down to **Scripts** and select **LoRA Strength Compare**
-3. Pick LoRAs from the dropdowns (use ＋/－ to add or remove slots)
-4. Set strength range and combination size
-5. Check the estimated image count, then click **Generate**
+1. **txt2img** または **img2img** を開く
+2. 下部の **Scripts** から **LoRA Strength Compare** を選択
+3. ドロップダウンで LoRA を選択（＋/－ボタンでスロットを追加・削除）
+4. 強度の範囲と同時使用本数を設定
+5. 合計枚数を確認してから **Generate**
 
-The script uses the prompt, seed, steps, CFG, and sampler already set in txt2img/img2img.
+プロンプト・Seed・Steps・CFG・サンプラーは txt2img / img2img の設定をそのまま使用します。
 
-## Example
+## 例
 
-- 4 LoRAs selected, combination size = 2, strengths = [0.5, 0.8, 1.0]
-- C(4, 2) = 6 combos × 3² = 9 strength patterns = **54 images**
+- LoRA 4本選択、同時使用本数 = 2、強度 = [0.5, 0.8, 1.0]
+- C(4, 2) = 6 組 × 3² = 9 強度パターン = **合計 54 枚**
 
-## Notes
+## 注意
 
-- Seed is fixed across all generations for fair comparison
-- Images are saved individually to `outputs/lora-compare/` regardless of WebUI save settings
+- Seed は全生成で固定されるため公平な比較が可能
+- 画像は WebUI の保存設定に関わらず `outputs/lora-compare/` に個別保存
