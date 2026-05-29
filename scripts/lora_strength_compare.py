@@ -237,10 +237,7 @@ class Script(scripts.Script):
         processing.fix_seed(p)
         base_prompt = p.prompt
 
-        save_dir = os.path.join(
-            shared.opts.outdir_samples if shared.opts.outdir_samples else "outputs",
-            "lora-compare",
-        )
+        save_dir = os.path.join(p.outpath_samples, "lora-compare")
         os.makedirs(save_dir, exist_ok=True)
         ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
