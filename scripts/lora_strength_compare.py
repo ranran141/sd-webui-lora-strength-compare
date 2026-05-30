@@ -56,6 +56,56 @@ def _short(name):
     return name.split("/")[-1]
 
 
+# ── トリガーワード読み込み ─────────────────────────────
+
+def _get_trigger_words(lora_rel: str) -> str:
+    """
+    LoRA の相対パス（拡張子なし）からトリガーワードを返す。
+    優先順: .json (activation text) → .civitai.info (trainedWords)
+    """
+    base = os.path.join(LORA_DIR, lora_rel)
+
+    # .json sidecar
+    json_path = base + ".json"
+    if os.path.isfile(json_path):
+        try:
+            with open(json_path, encoding="utf-8") as f:
+                d = json.load(f)
+            text = d.get("activation text", "").strip().strip(",").strip()
+            if text:
+                return text
+        except Exception:
+            pass
+
+    # .civitai.info sidecar
+    info_path = base + ".civitai.info"
+    if os.path.isfile(info_path):
+        try:
+            with open(info_path, encoding="utf-8") as f:
+                d = json.load(f)
+            words = [w.strip() for w in d.get("trainedWords", []) if w.strip()]
+            if words:
+                return ", ".join(words)
+        except Exception:
+            pass
+
+    return ""
+
+
+def _collect_triggers(slot_values: list[str]) -> str:
+    """選択中のLoRA全員のトリガーワードをまとめて返す（重複除去）。"""
+    seen, parts = set(), []
+    for name in slot_values:
+        if not name or name == NONE_LABEL:
+            continue
+        tw = _get_trigger_words(name)
+        for token in (t.strip() for t in tw.split(",") if t.strip()):
+            if token.lower() not in seen:
+                seen.add(token.lower())
+                parts.append(token)
+    return ", ".join(parts)
+
+
 # ── 計算 ─────────────────────────────────────────────
 
 def _strength_range(lo, hi, step):
@@ -181,6 +231,13 @@ class Script(scripts.Script):
                 add_btn = gr.Button("＋ 追加", size="sm")
                 rem_btn = gr.Button("－ 削除", size="sm")
 
+            trigger_preview = gr.Textbox(
+                label="検出されたトリガーワード",
+                value=_collect_triggers(saved),
+                interactive=False,
+                lines=2,
+            )
+
         def _add(n):
             new_n = min(n + 1, MAX_SLOTS)
             return [new_n] + [gr.update(visible=(i < new_n)) for i in range(MAX_SLOTS)]
@@ -210,12 +267,13 @@ class Script(scripts.Script):
         for ctrl in count_inputs:
             ctrl.change(fn=_calc_count, inputs=count_inputs, outputs=count_label)
 
-        # スロット変更時に保存
-        def _save_slots(*vals):
+        # スロット変更時: 保存 + トリガープレビュー更新
+        def _on_slot_change(*vals):
             _save_config({"slots": list(vals)})
+            return _collect_triggers(list(vals))
 
         for d in slots:
-            d.change(fn=_save_slots, inputs=slots, outputs=[])
+            d.change(fn=_on_slot_change, inputs=slots, outputs=[trigger_preview])
 
         return slots + [s_min, s_max, s_step, combo_n]
 
@@ -236,6 +294,7 @@ class Script(scripts.Script):
 
         processing.fix_seed(p)
         base_prompt = p.prompt
+        trigger_words = _collect_triggers(selected)
 
         save_dir = os.path.join(p.outpath_samples, "lora-compare")
         os.makedirs(save_dir, exist_ok=True)
@@ -253,7 +312,8 @@ class Script(scripts.Script):
                     f"<lora:{_short(name)}:{s}>"
                     for name, s in zip(combo, strength_pattern)
                 )
-                pc.prompt = ", ".join(x for x in [base_prompt, tags] if x)
+                combo_triggers = _collect_triggers(list(combo))
+                pc.prompt = ", ".join(x for x in [base_prompt, combo_triggers, tags] if x)
 
                 result = process_images(pc)
                 if not result.images:
