@@ -61,33 +61,39 @@ def _short(name):
 def _get_trigger_words(lora_rel: str) -> str:
     """
     LoRA の相対パス（拡張子なし）からトリガーワードを返す。
-    優先順: .json (activation text) → .civitai.info (trainedWords)
+    優先順: .json (activation text) → .metadata.json (civitai.trainedWords) → .civitai.info (trainedWords)
     """
     base = os.path.join(LORA_DIR, lora_rel)
 
     # .json sidecar
-    json_path = base + ".json"
-    if os.path.isfile(json_path):
-        try:
-            with open(json_path, encoding="utf-8") as f:
-                d = json.load(f)
-            text = d.get("activation text", "").strip().strip(",").strip()
-            if text:
-                return text
-        except Exception:
-            pass
+    try:
+        with open(base + ".json", encoding="utf-8") as f:
+            d = json.load(f)
+        text = d.get("activation text", "").strip().strip(",").strip()
+        if text:
+            return text
+    except Exception:
+        pass
+
+    # .metadata.json sidecar
+    try:
+        with open(base + ".metadata.json", encoding="utf-8") as f:
+            d = json.load(f)
+        words = [w.strip() for w in d.get("civitai", {}).get("trainedWords", []) if w.strip()]
+        if words:
+            return ", ".join(words)
+    except Exception:
+        pass
 
     # .civitai.info sidecar
-    info_path = base + ".civitai.info"
-    if os.path.isfile(info_path):
-        try:
-            with open(info_path, encoding="utf-8") as f:
-                d = json.load(f)
-            words = [w.strip() for w in d.get("trainedWords", []) if w.strip()]
-            if words:
-                return ", ".join(words)
-        except Exception:
-            pass
+    try:
+        with open(base + ".civitai.info", encoding="utf-8") as f:
+            d = json.load(f)
+        words = [w.strip() for w in d.get("trainedWords", []) if w.strip()]
+        if words:
+            return ", ".join(words)
+    except Exception:
+        pass
 
     return ""
 
