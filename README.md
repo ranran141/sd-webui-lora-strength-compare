@@ -2,6 +2,8 @@
 
 選択した LoRA の強度を全パターン組み合わせて一括生成し、比較できる Forge Neo 拡張機能です
 
+![screenshot](screenshot.png)
+
 ## 機能
 
 - LoRA を最大 8 本まで個別に選択
